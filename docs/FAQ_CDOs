@@ -1,0 +1,1726 @@
+--------------------------------------------------------------
+FAQ_CDOs:		common used calls
+--------------------------------------------------------------
+
+cdo -h
+
+usage : cdo  [Options]  Operator1  [-Operator2  [-OperatorN]]
+
+  Options:
+    -a             Generate an absolute time axis
+    -b <nbits>     Set the number of bits for the output precision
+                   (I8/I16/I32/F32/F64 for nc1/nc2/nc4/nc4c/nc5; F32/F64 for grb2/srv/ext/ieg; P1 - P24 for grb1/grb2)
+                   Add L or B to set the byteorder to Little or Big endian
+    --cmor         CMOR conform NetCDF output
+    -C, --color    Colorized output messages
+    --enableexcept <except>
+                   Set individual floating-point traps (DIVBYZERO, INEXACT, INVALID, OVERFLOW, UNDERFLOW, ALL_EXCEPT)
+    -f, --format <format>
+                   Format of the output file. (grb1/grb2/nc1/nc2/nc4/nc4c/nc5/srv/ext/ieg)
+    -g <grid>      Set default grid name or file. Available grids: 
+                   n<N>, t<RES>, tl<RES>, global_<DXY>, r<NX>x<NY>, g<NX>x<NY>, gme<NI>, lon=<LON>/lat=<LAT>
+    -h, --help     Help information for the operators
+    --history      Do not append to NetCDF "history" global attribute
+    --netcdf_hdr_pad, --hdr_pad, --header_pad <nbr>
+                   Pad NetCDF output header with nbr bytes
+    -k <chunktype> NetCDF4 chunk type: auto, grid or lines
+    -L             Lock IO (sequential access)
+    -M             Switch to indicate that the I/O streams have missing values
+    -m <missval>   Set the missing value of non NetCDF files (default: -9e+33)
+    --no_warnings  Inhibit warning messages
+    -O             Overwrite existing output file, if checked
+    --operators    List of all operators
+    --percentile <method>
+                   Percentile method: nrank, nist, numpy, numpy_lower, numpy_higher, numpy_nearest
+    --precision <float_digits[,double_digits]>
+                   Precision to use in displaying floating-point data (default: 7,15)
+    --reduce_dim   Reduce NetCDF dimensions
+    -R, --regular  Convert GRIB1 data from reduced to regular grid (cgribex only)
+    -r             Generate a relative time axis
+    -S             Create an extra output stream for the module TIMSTAT. This stream
+                   contains the number of non missing values for each output period.
+    -s, --silent   Silent mode
+    --sortname     Alphanumeric sorting of NetCDF parameter names
+    -t <codetab>   Set GRIB1 default parameter code table name or file (cgribex only)
+                   Predefined tables:  echam4 echam5 echam6 mpiom1 ecmwf remo cosmo002 cosmo201 cosmo202 cosmo203 cosmo205 cosmo250
+    --timestat_date <srcdate>
+                   Target timestamp (temporal statistics): first, middle, midhigh or last source timestep.
+    -V, --version  Print the version number
+    -v, --verbose  Print extra details for some operators
+    -W             Print extra warning messages
+    -z szip        SZIP compression of GRIB1 records
+       aec         AEC compression of GRIB2 records
+       jpeg        JPEG compression of GRIB2 records
+        zip[_1-9]  Deflate compression of NetCDF4 variables
+
+  Operators:
+    Use option --operators for a list of all operators.
+
+  CDO version 1.9.5, Copyright (C) 2003-2018 Uwe Schulzweida
+  This is free software and comes with ABSOLUTELY NO WARRANTY
+  Report bugs to <http://mpimet.mpg.de/cdo>
+
+--------------------------------------------------------------
+
+NCO programms support all types of netcdf file structures since they are general 
+netcdf tool. That's why you can change almost every detail with them like adding 
+arbitrary attributes to a data avariable. 
+CDO in constrast concentrates on gridded data along the lines of climate and weather 
+prediction use cases. Therefore the CF-convention is used as a basic standard for 
+netcdf files in order to identify things like grids, vertical coordinates and 
+different time axis. CDO also supports the WMO standard for weather prediction 
+called GRIB.
+
+--------------------------------------------------------------
+
+CDO follows the CF convention: 
+	http://cfconventions.org/cf-conventions/cf-conventions.html#latitude-coordinate
+
+--------------------------------------------------------------
+
+Retrieve more informations about an operator
+
+	cdo -h info
+
+--------------------------------------------------------------
+
+Colorized output on stdout
+
+	cdo -C .....
+	
+--------------------------------------------------------------
+
+Retrieve information about <infile> with grid information:
+
+	cdo sinfon <infile>
+	cdo sinfov <infile>
+
+--------------------------------------------------------------
+
+Retrieve information about variables, levels, min, max, mean:
+
+	cdo info <infile>
+
+--------------------------------------------------------------
+
+Show time:
+
+	cdo showtime <infile>
+
+--------------------------------------------------------------
+	
+How many timesteps:
+
+	cdo ntime <infile>
+
+--------------------------------------------------------------
+
+Show variable names:
+
+	cdo showname <infile>
+	cdo showvar <infile>
+
+--------------------------------------------------------------
+
+Show code number:
+
+	cdo showcode <infile>
+	
+--------------------------------------------------------------
+
+Copy grib file to netCDF file:
+
+	cdo -f nc copy <infile>.grb <infile>.nc
+
+--------------------------------------------------------------
+
+Copy file to file with relative time:
+
+	cdo -r -f nc copy <infile> <outfile>.nc
+
+--------------------------------------------------------------
+
+Operator chaining:
+
+Use
+	cdo sub -dayavg <infile2> -timavg <infile1> outfile
+
+instead of
+
+	cdo timavg <infile1> <tmp1>
+	cdo dayavg <infile2> <tmp2>
+	cdo sub <tmp2> <tmp1> <outfile>
+	rm <tmp1> <tmp2>
+
+--------------------------------------------------------------
+
+Time:
+
+Select time steps 1 and 5:
+
+	cdo -seltimestep,1,5 <infile> <outfile> 
+	
+Select time steps 1 to 12:
+
+	cdo -seltimestep,1/12 <infile> <outfile> 
+
+Change time units to 'minutes since ...':
+   
+	cdo -settunits,minutes <infile> <outfile>
+
+
+Convert from Julian date to standard calendar:
+
+	cdo -r -settaxis,1983-01-01,12:00:00,1day <infile> <outfile>
+	
+Change the reference time:
+
+	cdo -setreftime,1983-01-01,12:00:00,1day infile outfile
+	
+--------------------------------------------------------------
+
+Reorder levels from 'up' to 'down' e.g. for 18 levels
+
+	cdo -sellevidx,1/18 infile outfile
+
+Same as NCO command:
+
+	ncatted -a positive,lev,o,c,"down" infile outfile
+	
+--------------------------------------------------------------
+
+Interpolate by time:
+
+	cdo intntime,12 $NCL_TUT/data/ECHAM5_OM_A1B_2001_0101-1001_2D.nc tmp/tinterpolate_12.nc
+
+--------------------------------------------------------------
+
+Cat files together:
+
+	cdo cat <infile1> <infile2> <infile3>
+	
+	cdo cat 'filename*.nc' <infile3>
+
+--------------------------------------------------------------
+
+Invert the latitudes from N-S to S-N - NOT the other way round:
+
+	cdo invertlat <infile> <outfile>
+
+--------------------------------------------------------------
+
+Convert from K to degC when infile contains temperature values:
+
+	cdo addc,-273.15 <infile> <outfile>
+
+--------------------------------------------------------------
+
+Set missing value to constant value:
+
+	cdo setmisstoc,0 <file> <outfile>
+
+Set constant value to missing value:
+
+	cdo -r -f nc -setctomiss,-999.0 sample.srv sample_miss.nc
+
+Set NaN to missing value:
+
+	cdo setmissval,nan ifile ofile
+
+Then you can change it to -9999.9:
+
+	cdo setmissval,-9999.9 -setmissval,nan ifile ofile
+
+--------------------------------------------------------------
+Two timeseries, the first timeseries has missing values which has to be 
+changed/filled to the values of the second timeseries:
+
+	cdo ifthenelse -gtc,-9999 -setmisstoc,-9999 tser1.nc tser1.nc tser2.nc outfile.nc
+
+--------------------------------------------------------------
+
+Select north polar sub-region:
+
+	cdo -fldmean -sellonlatbox,-180.0,180.0,0.0,90.0  <infile> <outfileNH>
+
+Select south polar sub-region:
+
+	cdo -fldmean -sellonlatbox,-180.0,180.0,-90.0,0.0 <infile> <outfileSH>
+
+Select north polar sub-region and compute the monthly mean:
+
+	cdo -r -fldmean -sellonlatbox,-180.0,180.0,0.0,90.0  -monmean <tmpfile> <outfileNH>
+
+Select south polar sub-region and compute the monthly mean:
+
+	cdo -r -fldmean -sellonlatbox,-180.0,180.0,-90.0,0.0 -monmean <tmpfile> <outfileSH>
+
+
+Reverse / Reorder 0 - 360 to -180 180 by index e.g.
+
+	cdo -r copy -selindexbox,97,96,1,96 ex1_relTime_lonRange.nc avizo1.nc
+
+--------------------------------------------------------------
+
+Print infos similar to 'cdo info' to stdout
+
+Max of each Field:
+
+	cdo output -fldmax infile
+
+Range of each Field:
+
+	cdo output -fldrange infile
+
+--------------------------------------------------------------
+
+Compute the field means (time series) of the yearly means:
+
+	cdo -r -fldmean -yearmean <infile> <outfile>
+
+--------------------------------------------------------------
+
+Compute ensemble mean:
+
+	cdo ensmean <infile1> <infile2> <infile3> <outfile>
+
+Compute zonal mean of all input fields:
+
+	cdo zonmean <infile> <outfile>
+
+--------------------------------------------------------------
+
+Compute the monthly sum of daily data, divide the monthly data by days per month, 
+and change the units attribute of the variable
+
+	cdo -r -setattribute,tas@units="K/day" -divdpm -monsum <infile> <outfile>
+
+--------------------------------------------------------------
+
+The setattribute operator accepts more than one attribute and it supports wildcards:
+
+cdo -setattribute,y?_?@units="degrees_north",x?_?@units="degrees_east",????_a@coordinates="yc_a xc_a",????_b@coordinates="yc_b xc_b" \
+   map_0.5x0.5_nomask_to_360x720_nomask_aave_da_c120830.nc outfile_wild_cards.nc
+
+--------------------------------------------------------------
+
+Remap to new grid using a grid description file
+
+	cdo remapbil,gridfile.txt infile outfile
+
+gridfile.txt
+------------
+gridtype  = lonlat
+gridsize  = 62100
+xsize     = 300
+ysize     = 207
+xname     = lon
+xlongname = "longitude" 
+xunits    = "degrees_east" 
+yname     = lat
+ylongname = "latitude" 
+yunits    = "degrees_north" 
+xfirst    = 47.51
+xinc      = 0.033333333
+yfirst    = 23.61
+yinc      = 0.033333333
+
+--------------------------------------------------------------
+	
+Create weights file for remapping and remap:
+
+	cdo genbil,r360x180 -selname,elev <infile> <weights>
+	cdo remap,r360x180,weights -selname,elev <infile> <outfile>
+
+
+If an warning occurs like
+
+	cdo genbil: SCRIP bilinear weights from lonlat (1440x400) to lonlat (40x45) grid, with source mask (575319)
+	cdo genbil: Processed 576000 values from 2 variables over 1 timestep ( 0.12s )
+	cdo remap: SCRIP bilinear weights from lonlat (1440x400) to lonlat (40x45) grid
+	cdo remap (Warning): Remap weights from wgt_2.nc not used, lonlat (1440x400) grid with mask (575319) not found!
+
+the "with source mask" means that the input file contains missing values. These missing values are 
+ignored during the remapping process. Thats why the remap weights are different for those files.
+
+A workaround could be to set the missing values to zero. This should work at least for precip data:
+
+	cdo -R remap,gridfile.txt,wgt.nc -setmisstoc,0 file_N.nc remapped_file_N.nc
+
+
+--------------------------------------------------------------
+
+If you want to create a template grid file for a 1200x600 (0.3x0.3 degree) 
+sub-region (here North America):
+
+	cdo -f nc -sellonlatbox,-145,-50,25,60 -remapycon,r1200x600 -topo north_america.nc
+
+This can be used as a grid descriptor file:
+
+	cdo -f nc remapcon,north_america.nc ifile.nc ofile.nc
+
+--------------------------------------------------------------
+
+Rotated grid remapping:
+
+The optimal interpolation method depends on the contents of the data, and the resolution 
+of the source and target grid. The conservative method (remapcon) is necessary to preserve 
+the mass. If the source and target resolution is nearly the same then the bilinear interpolation 
+could be sufficient.
+
+remapcon needs the vertices of all gridcells. Your file seems to provide only the geographical 
+coordinates for the gridcell center. CDO can recalculate the gridcell center and vertices from 
+the rotated coordinates if you remove the gridcell center. This can be achieved by setting the 
+env. variable:
+
+	export IGNORE_ATT_COORDINATES=1
+
+You can also use 
+
+	setgridtype,curvilinear 
+
+to transform the rotated coordinates to geographical coordinates.
+
+The operator 
+
+	rotuvb 
+
+rotates the wind components back to a geographical system. The coordinates of the wind 
+components have to be the same. No transformation takes place! You have to transform 
+the wind coordinates to the scalar coordinates, if the data are e.g. on a C-Grid.
+
+--------------------------------------------------------------
+
+If error message occurs
+
+	Remapping of generic data failed!
+
+means that the remapping routine couldn't find data on a geographic grid. Thats because 
+the inputfile doesn't contain any grid information. In this case you have to specify the 
+grid information of the source data before the remapping. This can be done with the operator 
+setgrid:
+
+	cdo remapbil,targetgrid -setgrid,sourcegrid ifile ofile
+
+--------------------------------------------------------------
+
+Compute the mean of sets of selected hours:
+
+	for h in $(seq -w 00 23); do
+	cdo timmean -selhour,$h in.nc temp_$h.nc
+	done
+	cdo mergetime temp_??.nc out.nc
+
+or simple:
+
+	cdo hourmean <infile> <outfile>
+
+--------------------------------------------------------------
+
+Select season and compute 5-days mean:
+
+	cdo -timselmean,5 -select,season=DJF infile outfile
+
+--------------------------------------------------------------
+
+DO NOT USE remapcon it doesn't work correctly with some grid combinations !!
+
+USE remapycon  !!!!!!!
+
+--------------------------------------------------------------
+
+Remap data to grid using another data file as grid template to get same grid
+
+	cdo -remapycon,EUR-11_grid_info.nc <infile> <outfile>
+
+--------------------------------------------------------------
+
+Split input file to one file per code number:
+
+	cdo splitcode <infile> <codefile>			#-- codefile will be expanded by '01...99.nc'
+
+
+Split hourly data input file in one file per hour:
+
+	cdo splithour <infile> <hourfile>			#-- hourfile will be expanded by '01...99.nc'
+
+
+Split hourly data input file in one file per day:
+
+	cdo splitday <infile> <dayfile>				#-- dayfile will be expanded by '01...99.nc'
+
+--------------------------------------------------------------
+
+Split a file in each single timestep:
+
+	cdo splitsel,1 <infile> <outfile>
+
+Warning when using splitsel:
+
+---->
+e.g. timesteps 55
+
+Warning (gribapiScanTimestep) : Record 56 (name=gh id=5.3.0 lev1=10000000 lev2=0) timestep 56: Parameter not defined at timestep 1!
+
+	maybe the GRIB records in the file are sorted by levels.
+	CDO expects the records sorted by time.
+
+--->	grib_copy to re-sort the data by timesteps and after this, cdo works
+
+--------------------------------------------------------------
+	
+Merge e.g. the files from above together:
+
+	cdo mergetime <hour*.nc> <outfile.nc>
+
+
+If the files contain two grids lat/lat_2 and lon/lon_2 then the
+following error message occurs:
+
+> cdo mergetime C1D10291200102915001.nc C1D10291200102912011.nc C1D_merged.nc
+cdo mergetime (Warning): Input streams have different parameter names!
+
+cdo mergetime (Abort): Grid size of the input parameters do not match!
+
+A good way is to sort the variables with the option --sortname
+
+	cdo --sortname infile1 infile1_1
+	cdo --sortname infile2 infile2_1
+	cdo mergetime infile1_1 infile2_1 outfile
+
+--------------------------------------------------------------
+
+Large data support is a very new feature in CDO. You need to install the latest CDO 
+release 1.9.4 to process large data.
+
+--------------------------------------------------------------
+
+Delete February 29th
+
+	cdo delete,month=2,day=29 <infile> <outfile>
+	
+--------------------------------------------------------------
+
+Compute the detrend of field mean:
+
+	cdo -r -f nc detrend -fldmean <infile> <outfile>
+
+Compute the running mean over 10 timesteps:
+
+	cdo -r -f nc runmean,10 <infile> <outfile>
+
+--------------------------------------------------------------
+
+Create a mask for the Atlantic/Arctic and set all other regions to miss:
+
+	cdo setctomiss,0 -lec,5 -selvar,rbek /pool/data/MPIOM/input/r0003/GR15/GR15L40_fx.nc mask.nc
+
+
+Create a mask 1x1 degree land_only:
+
+cdo -f nc -expr,'topo = ((topo > 0.0)) ? 1.0 : 0.0' -remapycon,r360x180 -topo mask_the_ocean.nc
+
+
+Create a mask 1x1 degree ocean_only:
+
+cdo -f nc -expr,'topo = ((topo < 0.0)) ? 1.0 : 0.0' -remapycon,r360x180 -topo mask_the_land.nc
+
+--------------------------------------------------------------
+
+To limit data fields to land values, a mask has to be created first with
+
+	cdo -gtc,0 -topo,ni96 lsm_gme96.grb
+
+--------------------------------------------------------------
+Create a mask file from a data file to apply the new mask file on another file for 
+comparison purposes.
+
+From the topography file write only land values to new file (values ~ 0-9000):
+
+	cdo -f nc -setrtomiss,-20000,0 -topo land_only_topo.nc
+
+or same result with
+
+	cdo -f nc  -mul topo.nc -setctomiss,0 -gec,0 -topo land_only_topo.nc
+
+Remap land_only_topo.nc to the data grid of file testB.nc:
+
+	cdo -f nc -remapycon,testB.nc land_only.nc land_only_topo_on_B_grid.nc
+
+Mask testB.nc with land_only_topo_on_B_grid.nc to get the values of testB.nc only over land:
+
+	cdo -f nc ifthen land_only_topo_on_B_grid.nc testB.nc testB_over_land.nc
+
+To create the mask file for the other file testA.nc using testB_over_land.nc (land = 1) (you can also use setrtomiss operator):
+
+	cdo -f nc -gec,0 testB_over_land.nc mask_file_testB.nc
+
+Use the mask_file_testB.nc to mask the file testA.nc:
+
+	cdo -f nc -mul testA.nc mask_file_testB.nc testA_masked_by_testB_over_land.nc
+
+--------------------------------------------------------------
+How to invert the mask file?
+
+A workaround could be to create a new mask with subtraction of 1 and multiplication of -1:
+
+	cdo div data.nc -mulc,-1 -subc,1 lsm.nc masked_data.nc
+
+The next CDO release (after 1.9.2) comes with the new operator not (logical NOT) with produces the same result:
+
+	cdo div data.nc -not lsm.nc masked_data.nc
+
+--------------------------------------------------------------
+Add missing lat and lon coordinate variables to data file
+
+e.g. 
+	ncdump -h 2000.001.NVAPC.tpw.1xdaily.nc
+
+	netcdf \2000.001.NVAPC.tpw.1xdaily {
+	dimensions:
+		nx = 360 ;
+		ny = 180 ;
+		n_ssmi = 6 ;
+		n_hirs = 8 ;
+	variables:
+		float water_vapor(ny, nx) ;
+			water_vapor:standard_name = "atmosphere_mass_content_of_water_vapor" ;
+			water_vapor:long_name = "NVAP-M Climate Total Column Water Vapor" ;
+			water_vapor:units = "mm" ;
+			water_vapor:production_version = "1.0" ;
+			water_vapor:missing_value = -9999.f ;
+			water_vapor:valid_range = 0.f, 80.f ;
+		byte SSMI_DSC(n_ssmi, ny, nx) ;
+			SSMI_DSC:long_name = "Data Source Code for SSM/I on DMSP F08-F15" ;
+			SSMI_DSC:valid_range = 0s, 1s ;
+			SSMI_DSC:ssmi_platforms = "F08, F10, F11, F13, F14, F15" ;
+		byte HIRS_DSC(n_hirs, ny, nx) ;
+			HIRS_DSC:long_name = "Data Source Code For HIRS on NOAA 09-17" ;
+			HIRS_DSC:valid_range = 0s, 1s ;
+			HIRS_DSC:hirs_platforms = "N09, N10, N11, N12, N14, N15, N16, N17" ;
+		byte Sonde_DSC(ny, nx) ;
+			Sonde_DSC:long_name = "Data Source Code for Radiosonde" ;
+			Sonde_DSC:valid_range = 0s, 1s ;
+		byte AIRS_DSC(ny, nx) ;
+			AIRS_DSC:long_name = "Data Source code for AIRS" ;
+			AIRS_DSC:valid_range = 0s, 1s ;
+	
+	// global attributes:
+			:conventions = "CF-1.6" ;
+			:title = "NASA Water Vapor Project - MEaSUREs Dataset" ;
+			:institution = "Science and Technology Corp., METSAT Division" ;
+	}
+
+CDO interprets this grid as a generic grid and isn't able to remap it to another grid.
+Assuming based on the ncdump output that it is a latlon grid where lon=0 to 360 degrees and 
+lat=-90 to 90 degrees with 1 degree interval each (if this is wrong you have to change the 
+grid file below).
+
+The grid file, here 'grid_latlon_global.txt', would look like the following
+
+gridtype  = lonlat
+gridsize  = 64800
+xsize     = 360
+ysize     = 180
+xname     = lon
+xlongname = "longitude" 
+xunits    = "degrees_east" 
+yname     = lat
+ylongname = "latitude" 
+yunits    = "degrees_north" 
+xfirst    = 0
+xinc      = 1.0 
+yfirst    = -90
+yinc      = 1.0
+
+Add the coordinates and write the data to e.g. 'data_with_latlon.nc'
+
+	cdo -f nc -setgrid,grid_latlon_global.txt 2000.001.NVAPC.tpw.1xdaily.nc data_with_latlon.nc
+
+Now, you can remap the data to another grid, like
+
+	cdo remapcon2,other_data_grid.nc  data_with_latlon.nc  data_with_latlon.rmp.nc
+
+--------------------------------------------------------------
+Classification or categorical data - index data - like soil index, leaf index, vegetation index
+
+The result of remaplaf is the index with the largest area fraction for each target grid cell.
+
+	cdo remaplaf,targetgrid infile outfile
+
+--------------------------------------------------------------
+Add missing time dimension variable to a file
+
+	cdo -f nc -settaxis,2000-01-01,,1day infile outfile
+	cdo -f nc -settaxis,2000-01-01,12:00:00,1day infile outfile
+
+--------------------------------------------------------------
+Rename dimensions
+
+	ncrename -O -d ncl1,time -d ncl2,lat -d ncl3,lon infile outfile
+
+--------------------------------------------------------------
+Reorder variable dimensions to time,lat,lon
+
+	ncpdq -O -a time,lat,lon infile outfile
+
+--------------------------------------------------------------
+ICON - remap ICON / HDCP2 data to latlon grid
+
+#-- data and grid file names
+  data="2d_surface_day_DOM01_ML_20130511T120000Z_u10_v10_t1.nc"
+  data_1="data.nc"
+  outfile="outfile_2.nc"
+  
+  gridfile="GRID_default_3d_fine_DOM01_ML.nc"
+  weights="wgts_file_Germany.nc"
+
+#-- create a grid description file for the sub-region Germany based on the $gridfile
+  cat << EOF > gridfile_Germany.txt
+  gridtype  = lonlat
+  gridsize  = 7844
+  xsize     = 106
+  ysize     = 74
+  xname     = lon
+  xlongname = "longitude" 
+  xunits    = "degrees_east" 
+  yname     = lat
+  ylongname = "latitude" 
+  yunits    = "degrees_north" 
+  xfirst    = 2.9
+  xinc      = 0.125 
+  yfirst    = 46.4
+  yinc      = 0.125
+EOF
+
+#-- compute weights
+  echo "--> gennn ....."
+  cdo -O -P 4 -gennn,gridfile_Germany.txt -setgrid,$gridfile $data $weights
+
+#-- remap
+  echo "--> remap ....."
+  cdo -O -P 4 -remap,gridfile_Germany.txt,$weights -setgrid,$gridfile $data $outfile
+
+******
+
+long way:
+
+#-- change the working directory
+  cd $HOME/data/ICON/
+
+#-- data and grid file names
+  infile="2d_surface_day_DOM01_ML_20130511T120000Z_u10_v10_t1.nc"
+  file1="2d_surface_day_DOM01_ML_20130511T120000Z_u10_v10_t1_plus_GRID_default.nc"
+  outfile="2d_surface_day_DOM01_ML_20130511T120000Z_u10_v10_t1_latlon_Germany.nc"
+  
+  gridfile="GRID_default_3d_fine_DOM01_ML.nc"
+  gridorg="hdcp2_default_R0625m_DOM01.nc"
+  vertex="vertex_of_cells.nc"
+  weights="wgts_file_Germany.nc"
+
+#-- selext the vertex_of_cell variable for NCL's ESMF regridding
+  cdo select,name=vertex_of_cell $gridorg $vertex
+  
+#-- first merge data and grid file
+  cdo -O merge $vertex $gridfile $infile $file1
+  
+#-- add coordinates attribute to variables - cdo won't do the remapping if not set
+  ncatted -O -a coordinates,u_10m,a,c,"clat clon" -a coordinates,v_10m,a,c,"clat clon" $file1
+
+#-- copy/select the variables decreases the size of the file about 90%
+  cdo -select,name=u_10m,v_10m,vertex_of_cell $file1 tmp.nc
+  mv tmp.nc $file1
+
+#-- create a grid description file for the sub-region Germany based on the $gridfile
+  cat << EOF > gridfile_Germany.txt
+  gridtype  = lonlat
+  gridsize  = 7844
+  xsize     = 106
+  ysize     = 74
+  xname     = lon
+  xlongname = "longitude" 
+  xunits    = "degrees_east" 
+  yname     = lat
+  ylongname = "latitude" 
+  yunits    = "degrees_north" 
+  xfirst    = 2.9
+  xinc      = 0.125 
+  yfirst    = 46.4
+  yinc      = 0.125
+EOF
+
+  cdo gennn,gridfile_Germany.txt $gridfile $weights
+  cdo remap,gridfile_Germany.txt,$weights $file1 $outfile
+
+#-- use -P <threads>:
+  cdo -P 48 gennn,gridfile_Germany.txt $gridfile $weights
+  cdo -P 32 remap,gridfile_Germany.txt,$weigths $file1 $outfile
+
+--------------------------------------------------------------
+ICON Daten Region ausschneiden mit sellonlat:
+
+Europa
+
+	cdo -sellonlatbox,-20,40,20,75 lkm1003_tas.nc lkm1003_tas_eu.nc
+	cdo -f nc4 -setgrid,icongrid_2.nc -chvar,T_2M,tas -timavg \
+	    -selvar,T_2M nwp_R2B09_lkm1003_atm3_2d_ml_20160806T000000Z.grb lkm1003_tas.nc
+
+--------------------------------------------------------------
+
+ICON: prevent the change of variable names in grib2
+
+Dec.2017 this is a bug in CDO. Workaround is to change the table version in the 
+GRIB API template GRIB2.tmpl.
+see https://www.dwd.de/DE/leistungen/opendata/help/modelle/Opendata_cdo.pdf?__blob=publicationFile&v=3
+
+	grib_set -s tablesVersion=11 GRIB2.tmpl GRIB2.tmpl
+
+--------------------------------------------------------------
+
+Lets have a data file array.nc (time=60,nx,ny) and a timeseries file nino34.nc (time=60,nx=0,ny=0) 
+to do an correlation of both files
+
+	cdo timcor array.nc -enlarge,array.nc nino34.nc outfile.nc
+
+
+Assumed you want to add two datasets. The first dataset is a field on a global grid (n field elements) 
+and the second dataset is a global mean (1 field element). Before you can add these two datasets the 
+second dataset have to be enlarged to the grid size of the first dataset:
+
+	cdo enlarge,infile1 infile2 tmpfile
+	cdo add infile1 tmpfile outfile
+
+Or shorter using operator piping:
+
+	cdo add infile1 -enlarge,infile1 infile2 outfile
+       
+--------------------------------------------------------------
+
+To create a standard atmosphere dataset on a given horizontal grid:
+
+	cdo enlarge,gridfile -stdatm,10000,8000,5000,3000,2000,1000,500,200,0 <outfile>
+   
+--------------------------------------------------------------
+
+Interpolate to a regular spherical grid and average zonally:
+
+	cdo -zonmean -remapbil,r360x180 -sethalo,-1,-1 -mul -timavg <infile> mask.nc <outfile>
+
+--------------------------------------------------------------
+
+How to create lon-lat-boxes on the MPIOM grids:
+
+Although the CDO "sellonlatbox" command does not work for the MPIOM grids, it is 
+still possible to generate lon-lat-masks on GR and TP grids. Here is how:
+You need a <modelgrid-description-file>, that could be basically any MPIOM-outputfile 
+in netCDF-format. Then you create a lon-lat-mask on a regular 360x180 grid, transform 
+it to the model grid:
+
+	cdo -f nc -remapdis1,<modelgrid-description-file> -masklonlatbox,<lon1,lon2,lat1,lat2> -addc,1 -mulc,0 -random,r360x180 <lon-lat-mask-file>
+
+This method also works for other model-grids.
+
+--------------------------------------------------------------
+
+Remove all dimensions with length 1 (time,lev,lat,lon):
+
+	cdo --reduce_dim <infile> <outfile>
+	
+--------------------------------------------------------------
+
+Built-in topography:
+
+	cdo -topo data.grb
+	
+Create a file with masked land:
+
+	cdo -setrtomiss,0,10000 -topo topo_ocean.grb
+	
+Create a file with masked ocean:
+
+	cdo -setrtomiss,-20000,0 -topo topo_land.grb
+
+--------------------------------------------------------------
+
+Generate a standard surface pressure file from topography:
+
+	cdo -f nc -expr,’P = 1013.25 * exp(-1.602769777072154*log((exp(topo/10000.0)*213.15+75.0)/288.15))’ \
+	    -topo surface_pressure.nc
+
+--------------------------------------------------------------
+
+To calculate principal coeffcients of the first 40 EOFs of anom_file, and write 
+them to files beginning with obase, use:
+
+    export CDO_WEIGHT_MODE=off
+	cdo eof,40 anom_file eval_file eof_file
+	cdo eofcoeff eof_file anom_file obase
+
+The principal coeffcients of the first EOF will be in the file obase000000.nc 
+(and so forth for higher EOFs, nth EOF will be in obase<n-1>).
+
+
+If the dataset infile does not containt anomalies, process them first, and use:
+                 
+	export CDO_WEIGHT_MODE=off
+	cdo sub infile -timmean infile anom_file
+	cdo eof,40 anom_file eval_file eof_file
+	cdo eofcoeff eof_file anom_file obase
+
+or
+
+	cdo -s -ymonsub prec.djf.1979.2009.nc -ymonmean prec.djf.1979.2009.nc anom.djf.nc
+	cdo -s eof,10 anom.djf.nc eigenvals.nc eofs.nc
+	cdo -s eofcoeff eofs.nc anom.djf.nc pc
+
+--------------------------------------------------------------
+
+Retrieve the data near to a lat/lon location:
+
+	cdo -f nc remapnn,lon=106.5_lat=-6 $infile tmp.nc
+
+
+Compute the annual cycle of the data:
+
+	cdo -f nc ymonmean tmp.nc $outfile
+
+--------------------------------------------------------------
+
+To rearrange the longitudes from -180.0-180.0 to 0-375.5
+
+  cdo sellonlatbox,0,357.5,-90,90 infile outfile
+
+--------------------------------------------------------------
+
+Expressions
+
+Conditional operator:
+
+	cdo -f nc -expr,'topo = ((topo >= 0.0)) ? topo : (topo/0.0)' -topo orog.nc
+
+	cdo expr,'var1=aprl+aprc; var2=ts-273.15;' <infile> <outfile>
+
+	cdo -expr,'tplus = ((tsurf >= 273.15)) ? tsurf : (tsurf/0.0); tmin = ((tsurf < 273.15)) ? tsurf : (tsurf/0.0)' \
+             <infile> <outfile>
+             
+	cdo -expr,'tc=tsurf-273.15; tplus = ((tc >= 273.15)) ? tc : (tc/0.0); tmin = ((tc < 273.15)) ? tc : (tc/0.0)' \
+             <infile> <outfile>
+
+--------------------------------------------------------------
+
+Copy the data of the first timestep to all other timesteps:
+
+- select first timestep
+
+  cdo -f nc -seltimestep,1 infile tmp_1t.nc
+
+- set the data of the variable you want (here tas) to value 1 and multiply it with the first timestep
+
+  cdo -mul tmp_1t.nc -expr,'tas=1' infile outfile
+
+The multiplication of the single timestep will cause a fill up by copying the first timestep to all 
+other timesteps.
+
+--------------------------------------------------------------
+
+Compute the 90th percentile and get the elnino and elnina values separated. 
+
+	cdo timpctl,90 ifile -timmin ifile -timmax ifile ofile
+
+Percentiles for El Nino (positive values of Nino3.4 index) and La Nina (negative values of Nino3.4 SST anomaly index):
+
+	cdo -expr,'elnino = ((index3.4 >= 0)) ? index3.4 : (index3.4/0.0); elnina = ((index3.4sst < 0)) ? index3.4sst : (index3.4sst/0.0)' <infile> <outfile>
+
+--------------------------------------------------------------
+
+Break your regular grid into n × m parts:
+
+	cdo -distgrid,2,3 -topo topo splitted.grb
+
+Put your pieces together with:
+
+	cdo -collgrid topo splitted*.grb collectedtopo.grb
+
+--------------------------------------------------------------
+
+Compute the percentile values over all time steps
+(returns value of 90% over all time steps)
+
+	cdo timmin <infile> minfile
+	cdo timmax <infile> maxfile
+	cdo timpctl,90 <infile> minfile maxfile <outfile>
+or
+	cdo timpctl,90 <infile> -timmin <infile> -timmax infile <outfile>
+
+--------------------------------------------------------------
+
+Extract time series of GCM gridpoint nearest to station observation
+
+	cdo -remapycon,lon=23.45632/lat=89.000452 <infile> <outfile>
+
+--------------------------------------------------------------
+
+Extract data from latlon point and write date, lat, lon, and value to ASCII file
+
+	cdo remapnn,lon=106.5_lat=-6 <infile> tmp.nc
+
+	cdo outputtab,date,lon,lat,value tmp.nc > aout_ascii.txt
+
+or
+
+	cdo -outputtab,date,lon,lat,value -remapnn,lon=106.5_lat=-6 <infile> > aout_ascii.txt
+
+
+To create a user defined table of a dataset:
+Each parameter of outputtab is one row in the table. Here is an example to print the 
+Lon, Lat and Value of all fields:
+
+	cdo outputtab,lon,lat,value ifile
+
+The following parameter are implemented:
+
+	value, name, param, code, lon, lat, lev, xind, yind, timestep, date, time, year, month, day, nohead
+
+You can try it with:
+
+	cdo outputtab,date,time,value ifile > outfile.csv
+
+--------------------------------------------------------------
+
+To pass for frequencies between min and max freq. of data (10-20 days) with daily values for July-August (62 days):
+ (! February, 29th must be deleted first)
+ 
+	The values for bandpass can be calculated by:
+	62/20 = 3.1
+	62/10 = 6.2
+	
+	cdo bandpass,3.1,6.2 -del29feb tas_day_MPI-ESM-LR_historical_r1i1p1_year2000_day.nc filtered.nc
+	
+	For daily data (30-60 days) of many years:
+	365/60 =  6.0833
+	365/30 = 12.1667
+	
+	cdo bandpass,6.0833,12.1667 -del29feb <infile> <outfile>
+
+Yearly data of 1000 years, use bandpass over years 30-100 :
+
+	1000/100 = 10.0
+	1000/30  = 33.333
+
+	cdo bandpass,10.0,33.333 
+  
+--------------------------------------------------------------
+
+Separate multiple z-axes into individual files
+
+    cdo splitzaxis <infile> <outfile_basename>
+
+	cdo splitzaxis ICMSHg4a4+000000.grb ICMSHg4a4+000000_split
+	ls ICMSH*split*
+	  ICMSHg4a4+000000_split01.grb
+	  ICMSHg4a4+000000_split02.grb
+	  ICMSHg4a4+000000_split03.grb
+	  ICMSHg4a4+000000_split04.grb
+
+--------------------------------------------------------------
+
+Convert vorticity & divergence to u & v
+
+	cdo dv2uvl <infile> <outfile>
+
+--------------------------------------------------------------
+
+Interpolate model levels to pressure levels
+	
+	cdo ml2pl,92500,85000,50000,20000 <input file> <output file>
+
+--------------------------------------------------------------
+
+Convert Grib file with reduced Gaussian grid to regular grid
+(e.g. ECMWF-IFS)
+
+	cdo -R copy <infile> <outfile>
+	
+  oder
+  
+	cdo -setgridtype,regular <infile> <outfile>
+
+--------------------------------------------------------------
+
+How to correct data file with mixed records of GRIB 1 and GRIB 2
+--> use grib-api's program grib_set
+
+	grib_set -s editionNumber=1 <infile> <outfile>
+	
+
+ECMWF-IFS Data containing mixed GRIB1/2 records:
+
+    grib_set -s editionNumber=1 infile.grb outfile_k.grb
+     
+    cdo -C -R copy outfile_k.grb outfile_k_R.grb
+    cdo -C -setgridtype,regular outfile_k.grb outfile_k_R_regular.grb
+
+    cdo -C -v splitzaxis outfile_k_R.grb outfile_k_R                             #-- cdo splitzaxis
+
+    grib_copy outfile_k_R.grb outfile_k_R_typeoflevel_[typeOfLevel].grb          #-- grib-api splitaxis
+
+    cdo -C -t ecmwf -f nc copy -sp2gpl outfile_k_R01.grb outfile_k_R01_PL_GP.nc  #-- spectral fields on press levels transformed to gridpoint
+    cdo -C -t ecmwf -f nc copy outfile_k_R02.grb outfile_k_R02_ML_GP.nc          #-- model level gridpoint fields
+     
+    cdo -C -O merge outfile_k_R01_PL_GP.nc outfile_k_R02_ML_GP.nc outfile_k_merged.nc
+
+----
+
+Falls dies nicht geht kann es sein, dass das File records enthält von denen einige 
+identische Meta-Daten haben.
+Beim Scannen eines GRIB Files legt CDO ein Inventory an. Es gibt 2 Varianten dieses
+Inventory zu erzeugen. Alle Einträge dürfen pro Zeitschritt nur einmal vorkommen.
+In der ersten Variante (default) wird davon ausgegangen, das sobald ein identischer
+Record das zweite mal vorkommt ein neuer Zeitschritt beginnt. Und das auch, wenn das
+Datum gleich ist. Wenn dann aber ab dem zweiten Zeitschritt Variablen dazukommen,
+welche nicht im ersten Zeitschritt vorhanden waren, führt das zu folgender Fehlermeldung:
+
+> Warning (gribapiScanTimestep2) : Record 1223 (name=FRESHSNW id=203.1.0 lev1=0 lev2=0) timestep 2: Parameter not defined at timestep 1!
+
+In der zweiten Variante beginnt eine neuer Zeitschritt, wenn ein neues Datum anfängt.
+Wenn hier innerhalb eines Zeitschrittes gleiche Variablen vorkommen sollten, werden 
+diese für das weiter processing nicht berücksichtigt. Um diese Variante zu aktivieren
+muss folgende Umgebungsvariable gesetzt werden;
+
+export CDI_INVENTORY_MODE=time
+
+Es erscheinen dann folgende Fehlermeldungen
+
+Warning (gribapiScanTimestep1) : Record 1205 (name=W_SO id=20.3.2 lev1=0 lev2=10) timestep 1: Parameter already exist, skipped!
+
+Aber alle anderen Records werden korrekt bearbeitet.
+
+--------------------------------------------------------------
+
+Select multiple fields via GRIB1 parameters
+
+Change identication of multiple fields
+
+  cdo changemulti,’{(134;1;*|1;105;*)}’ infile outfile
+ 
+--------------------------------------------------------------
+
+How to retrieve the parameter tabel of a file?
+
+Use the partab operator.
+
+	cdo partab infile
+
+--------------------------------------------------------------
+
+Write partab for a variable name to be selected and change its name and convert data using factor.
+
+new.partab
+
+&parameter
+  name      = "qvi"
+  out_name  = "QVI"
+  code      = 230
+  long_name = "vertically integrated water vapor"
+  units     = "kg/m^2"
+  factor    = 0.1
+  convert   = 1
+/
+
+cdo setpartab,new.partab -selname,qvi infile outfile
+
+--------------------------------------------------------------
+
+How can I convert the CMOR parameter tables to the CDO parameter table format?
+
+Use the conv_cmor_table operator. Here is an examples to convert the CMOR CMIP5 table  
+CMIP5_day to a CDO parameter table:
+
+	cdo conv_cmor_table,CMIP5_day > CMIP5_day.partab
+
+To apply this table to a dataset use:
+
+	cdo setpartabn,CMIP5_day.partab infile outfile
+
+--------------------------------------------------------------
+
+Operator selyearidx to extract data by indices created with yearmaxidx/*yearminidx*. 
+Both operators have the status experimental. Documentation is not available, yet. 
+Here is an example:
+
+	cdo yearmaxidx infile idxfile
+	cdo selyearidx idxfile infile outfile
+
+--------------------------------------------------------------
+
+Select/separate all years from file containing e.g. 1960-2100, 
+instead of
+
+	cdo -selyear,1960 ifile.nc 1960_data.nc
+	cdo -selyear,1961 ifile.nc 1961_data.nc
+	...
+	
+do it in one command line
+
+	for year in $(seq -w 1961 1 2100); do cdo -selyear,$year ifile.nc ${year}_DataFile.nc ; done
+	
+--------------------------------------------------------------
+
+do something with the daily data with respect to the number of days per month
+
+    muldpm   Multiply with days per month 
+    divdpm   Divide by days per month 
+    muldpy   Multiply with days per year 
+    divdpy   Divide by days per year
+
+--------------------------------------------------------------
+Operator select
+
+To chose user defined seasons use the select operator with the parameter season
+where SEASON is a comma separated list of seasons (substring of DJFMAMJJA- SOND or ANN):
+
+	cdo select,season=JFMAM infile outfile
+
+Select last timestep without knowing how many are in the file:
+
+	cdo select,timestep=-1 infile outfile
+	
+Assume you have 3 input files. Each input file contains the same variables for a different 
+time period. To select the variable T,U and V on the levels 200, 500 and 850 from all 3 
+input files, use:
+
+    cdo select,name=T,U,V,level=200,500,850 infile1 infile2 infile3 outfile
+       
+--------------------------------------------------------------
+
+To cat multiple files with different ordered variables; sort variables first 
+with --sortname option
+
+	cdo --sortname -select,name=sla,adt 'dt_*.nc' outfile
+	
+--------------------------------------------------------------
+
+Change output month: DJF - F (not J), MAM - M (not A),...
+
+	export CDO_TIMESTAT_DATE=last
+	cdo splitseas -seasmean test.mslp.mon.mean.nc test_seasmean_ 
+	cdo timmean test_seasmean_MAM.nc test_seasmean_MAM_timmean.nc
+	cdo ymonsub test_seasmean_MAM.nc test_seasmean_MAM_timmean.nc test_seasmean_MAM_ymonsub.nc
+
+or 
+	cdo --timestat_date last  splitseas -seasmean test.mslp.mon.mean.nc test_seasmean_ 
+	cdo --timestat_date last  timmean test_seasmean_MAM.nc test_seasmean_MAM_timmean.nc
+	cdo ymonsub test_seasmean_MAM.nc test_seasmean_MAM_timmean.nc test_seasmean_MAM_ymonsub.nc
+
+--------------------------------------------------------------
+Change the season months for e.g. seasavg (default DJF, MAM, JJA, SON) to e.g. 
+JFM, AMJ, JAS and OND
+
+	export CDO_SEASON_START=JAN
+  
+Check the used seasons with -v option
+
+	cdo -v seasavg ifile ofile
+
+--------------------------------------------------------------
+Select dates from one file and use the dates as time to be selected from another file
+
+E.g. select relevant times from a file
+
+	cdo -r -seltimestep,32/200 $infile $selin
+
+Create a comma separated list of the dates of the first file and write it to a new ASCII file
+
+	cdo -s showtimestamp $selin | perl -pe 's/^\s*//' | tr -s ' ' | tr ' ' ',' > list_of_dates.txt
+
+Use the comma separated list to select the dates from the other file
+
+	cdo select,date=$(cat list_of_dates.txt) $infile $outfile
+
+Just in one step
+
+	cdo select,date=$(cdo -s showtimestamp $selin | perl -pe 's/^\s*//' | tr -s ' ' | tr ' ' ',') $infile $outfile2
+
+--------------------------------------------------------------
+Operator delete
+
+Delete first timestep in file:
+
+	cdo delete,timestep=1 infile outfile
+	 
+--------------------------------------------------------------
+Percent variance of EOFs
+
+The percent variance is the quotient of the eigenvalue and the total variance of 
+the input data.
+
+The total variance of the input data can be calculated with 
+
+  cdo fldsum -timvar infile
+
+You need to set the environment variable
+
+  CDO_WEIGHT_MODE=off
+
+in order to get correct results. Here is an example script:
+
+#!/bin/ksh
+  export CDO_WEIGHT_MODE=off
+  NEOF=10
+  cdo eof,$NEOF anom_file eval_file eof_file
+
+  cdo fldsum -timvar anom_file totvar1
+
+  for ((i=1; i<=$NEOF-1; ++i)) ; do
+    cdo -seltimestep,${i} eval_file totvar2
+    MODE=`cdo output -mulc,100 -div totvar2 totvar1 | sed  "s- --g"`
+    echo "EOF MODE ${i}: $MODE" 
+  done
+exit
+
+--------------------------------------------------------------
+Differences between consecutive timesteps
+
+	Operator deltat -  	it's not documented, but computes differences between 
+						consecutive timesteps
+
+--------------------------------------------------------------
+
+A grid description file in SCRIP format is directly supported as a CDO grid 
+description file. That means it can be used wherever a grid description file 
+is needed in CDO.
+
+  cdo gridarea -random,<grid_description_file>
+
+--------------------------------------------------------------
+You can overwrite the level description with setzaxis. Here is an example for 
+a description of 7 pressure level in hPa:
+
+zaxistype = pressure
+size      = 7
+name      = lev
+longname  = pressure
+units     = hPa
+levels    = 850 500 200 100 50 20 10 
+
+Store the above lines in a file, e.g. myzaxis and pass it to setzaxis:
+
+  cdo setzaxis,myzaxis  ifile  ofile
+
+--------------------------------------------------------------
+The CDO operator setltype set the GRIB level type but doesn't take care of the units. 
+With "setltype,112" you change the level type to depth_below_land which has the 
+default units "cm" in GRIB but the levels are still in "m". So the units will be 
+simple overwritten which results in 0.02cm. 
+
+Please try it with the CDO operator setzaxis:
+
+cat > myzaxis << EOR
+zaxistype = depth_below_land
+size      = 1
+name      = depth
+units     = "m" 
+lbounds   = 0 
+ubounds   = 0.02
+EOR
+
+	cdo -f grb setzaxis,myzaxis infile outfile
+
+--------------------------------------------------------------
+Für MPI-OM TP6M wäre die Datei also so richtig:
+
+#
+# zaxisID 0
+#
+zaxistype : depth_below_sea      !!!! <-- keine Leerzeichen
+size      : 80
+name      : depth
+longname  : "depth below sea level"
+units     : "m"
+levels    : -6, -17, -27, -37, -47, -57, -67, -77.5, -88.5, -100, -112.5, -125.5, -139, -153,
+    -167.5, -183, -199, -215.5, -233, -251.5, -271, -291.5, -312.5, -334, -357, -381.5,
+    -407, -433.5, -461, -489.5, -519.5, -551, -584, -618.5, -654.5, -692.5, -732, -773,
+    -816, -861, -908, -957, -1008.5, -1062.5, -1119, -1178, -1239.5, -1304, -1371.5,
+    -1442, -1516, -1593.5, -1674.5, -1759.5, -1848.5, -1941.5, -2038.5, -2140, -2246,
+    -2356.5, -2472.5, -2594, -2721, -2854, -2993, -3138.5, -3290.5, -3449.5, -3616,
+    -3790, -3972, -4162.5, -4362, -4570.5, -4788.5, -5016.5, -5255, -5504.5, -5765.5,
+    -6038.5 
+    
+--------------------------------------------------------------
+
+Convert GrADS binary file to netCDF file with the descriptor file using the 
+import_binary operator:
+
+	cdo -f nc import_binary model.ctl model.nc
+
+The same way you can convert a binary file provided that you have a grid description 
+file .ctl.
+
+--------------------------------------------------------------
+
+Pass environment variable to CDO:
+
+	CDO_GRIDSEARCH_RADIUS=1.25 cdo -v remapdis,gd W_OLR_INT_CUT.nc Radius1.25_Dis.nc
+	
+--------------------------------------------------------------
+
+Your NetCDF dataset contains masked data with the values 0 and 1. This data 
+is stored with the data type 8-bit Integer. The Interpolation produces values 
+between 0 and 1. These values can't be stored in 8-bit Integer. Therefor the 
+result is rounded to the nearest integer value, which is again 0 or 1. You 
+have to change the output datatype to floating point to solve the problem:
+
+	cdo -b F32 inttime,2015-12-28,00:00:00,1day NOAA_Snow_Cover_Jan2016.nc JANSNOWDAILY.nc
+
+--------------------------------------------------------------
+
+Time interpolation from 360 days stored with minutes-since to standard calender 
+days-since:
+
+	cdo -r -f nc -inttime,0251-01-01,12:00:00,1day -setcalendar,standard -settaxis,0251-01-01,12:00:00,1day model.test.data.grb test.output_365.nc
+
+--------------------------------------------------------------
+
+To interpolate 6-hourly data to 1-hourly data
+
+	cdo inttime,6 infile outfile
+	
+or
+	
+	cdo inttime,2011-01-01,00:00,1hour infile outfile
+
+--------------------------------------------------------------
+
+Set user-defined code table:
+
+cat > mycodetab << EOF
+1;105 MSLP Mean sea-level pressure [Pa]
+1;103 SP Surface pressure [Pa]
+EOF
+
+	cdo -f nc setcodetab,mycodetab <infile> <outfile>
+
+--------------------------------------------------------------
+
+Retrieve frost days where temperature is less than 0
+
+1.	cdo -f nc -timsum -expr,'t2min = ((t2min < 0.0)) ? 1.0 : (t2min/0.0)' infile outfile
+2.	cdo -f nc -timsum -ltc,0 infile outfile
+
+--------------------------------------------------------------
+
+Bias of two files:    Bias=sum(obs(file1)-sim(file2))/ntimes
+
+  outfile3="bias_tas_3.nc"
+  outfile4="bias_tas_4.nc"
+
+  timesteps=31
+  
+  cdo -seltimestep,1/31 $infile1 f1.nc
+  cdo -seltimestep,1/31 $infile2 f2.nc
+  
+  cdo -timavg -sub f1.nc f2.nc $outfile3                  #-- jupp
+  cdo -divc,$timesteps -timsum -sub f1.nc f2.nc ttt.nc    #-- same as above
+  
+  #-- same as above but chained
+  cdo -divc,$timesteps -timsum -sub -seltimestep,1/31 $infile1 $infile2 $outfile4 
+  
+
+RMSE computation
+
+	cdo sqrt -fldmean -sqr -sub sim.nc obs.nc rmse.nc
+
+==============================================================================================
+
+Shell scripts:
+
+	Compute the highest five day precipitation amount per selected year of a multi-year file
+	using eca_rx5day:
+	
+    #!/bin/ksh
+      infile="in.nc" 
+      outfile="new_outfile.nc" 
+    
+      nyears=$(cdo nyear $infile)                           #-- how many years in infile
+      set -A years $(cdo -s showyear $infile)               #-- retrieve the years
+    
+      y=${years[0]}                                         #-- initialize start year
+      i=1
+      for ((i=1; i<=$nyears-1; ++i))                        #-- loop over all years
+      do
+        y=`expr $y + 1`                                     #-- set year to be selected
+        cdo -eca_rx5day -selyear,$y $infile out_${i}.nc     #-- highest five day precipitation amount per selected year
+      done
+    
+      cdo -cat out_*.nc $outfile                            #-- concatenate yearly output files to new_outfile.nc
+    exit
+
+--------------------------------------------------------------
+Play the wildcard
+
+... with files
+
+Some operators like cat and merge have an abitrary number of input files. That's why its a 
+problem to put them into a chain with other operators. Especially cat can create large 
+temporary data. But this has been solved through the usage of wildcards: Given a single 
+quoted shell-like wildcard string, CDO can evaluate it into a file list. With that technique, 
+operations like
+
+  cdo -timmean -cat ’exp004_201?_global.nc*’ global_Timemean.nc
+
+are possible.
+
+... with variables
+
+What about selecting variables with wildcards? If you want to do this, the select operator 
+should be your choice. Wildcards can be uses for variables names or parameters:
+
+  cdo -select,’name=s*’ $ifile $ofile
+  cdo -select,’param=1.?.0’ $ifile $ofile
+
+
+And don't forget, that there is a range syntax for integers, which is supported by all operators 
+that handle integers for selection
+
+  cdo -select,timestep=2,3,5/8,10 $ifile $ofile
+
+==============================================================================================
+Magics++ plotting:
+
+
+Graph (xy-plot):
+
+	cdo graph  ifile1 ifile2... ofile 
+	
+	cdo graph,device="pdf" ifile1 ifile2... ofile 
+	
+	cdo graph,ymin=0.0,ymax=10.0 ifile1 ifile2... ofile 
+	
+	cdo graph,stat="TRUE" ifile1 ifile2... ofile 
+	
+	cdo graph,stat="TRUE",sigma=6.0 ifile1 ifile2... ofile 
+	
+	cdo graph,obsv="TRUE" obsvfile ifile1 ifile2... ofile 
+	
+	cdo graph,ymin=0.0,ymax=10.0,stat="TRUE",sigma=6.0,obsv="TRUE" obsvfile ifile1 ifile2... ofile 
+
+Contour:
+
+	cdo contour  ifile ofile
+	
+	cdo contour,device="pdf"  ifile ofile
+	
+	cdo contour,min=0.0,max=10.0  ifile ofile
+	
+	cdo contour,count=20  ifile ofile
+	
+	cdo contour,interval=5.0  ifile ofile
+	
+	cdo contour,list="5.0;7.0;10.0"  ifile ofile
+	
+	cdo contour,colour="green" ifile ofile
+	
+	cdo contour,RGB="TRUE",colour="RGB(0.0;1.0;1.0)" ifile ofile
+	
+	cdo contour,thickness=5.0  ifile ofile
+	
+	cdo contour,style="DASH" ifile ofile
+	
+	cdo contour,colour="RGB(100.0;100.0;100.0)" ifile ofile
+	
+	cdo contour,device=gif_animation,step_freq = 20 ifile ofile
+	
+	cdo contour,min=0.0,max=10.0,count=20,RGB="TRUE",colour="RGB(0.0;1.0;0.0)",thickness=10.0,style="DASH" ifile ofile
+
+
+Shaded:
+
+	cdo shaded ifile ofile
+	
+	cdo shaded,device="pdf"  ifile ofile
+	
+	cdo shaded,min=0.0,max=10.0  ifile ofile
+	
+	cdo shaded,count=20  ifile ofile
+	
+	cdo shaded,interval=5.0  ifile ofile
+	
+	cdo shaded,list="5.0;7.0;10.0" ifile ofile
+	
+	cdo shaded,colour_min="green",colour_max="blue",colour_triad="CW"  ifile ofile
+	
+	cdo shaded,RGB="TRUE",colour_min="RGB(0.0;0.0;1.0)",colour_max="RGB(1.0;0.0;0.0)",colour_triad="CW" ifile ofile
+	
+	cdo shaded,RGB="TRUE",colour_min="red",colour_max="blue" ifile ofile
+	
+	cdo shaded,colour_min="RGB(0.0;0.0;1.0)",colour_max="RGB(1.0;0.0;0.0)" ifile ofile
+	
+	cdo shaded,count=5,colourtable="table.txt" ifile ofile
+	
+	cdo shaded,min=-10.0,max=10.0,count=20,RGB="TRUE",colour_min="RGB(0.0;0.0;1.0)",colour_max="RGB(1.0;0.0;0.0)" ifile ofile
+
+
+grfill:
+
+	cdo grfill  ifile ofile
+	
+	cdo grfill,device="pdf"  ifile ofile
+	
+	cdo grfill,min=0.0,max=10.0  ifile ofile
+	
+	cdo grfill,count=20   ifile ofile
+	
+	cdo grfill,interval=5.0   ifile ofile
+	
+	cdo grfill,list="5.0;7.0;10.0"   ifile ofile
+	
+	cdo grfill,resolution=15.0   ifile ofile
+	
+	cdo grfill,colour_min="green",colour_max="blue"   ifile ofile
+	
+	cdo grfill,colour_min="green",colour_max="blue",colour_triad="ACW"   ifile ofile
+	
+	cdo grfill,RGB="TRUE",colour_min="RGB(0.0;1.0;0.0)",colour_max="RGB(0.0;0.0;1.0)" ifile ofile
+	
+	cdo grfill,RGB="TRUE",colourtable="table.dat" ifile ofile
+	
+	cdo grfill,min=-10.0,max=10.0,count=20,RGB="TRUE",colour_min="RGB(0.0;0.0;1.0)",colour_max="RGB(1.0;0.0;0.0)",resolution=15.0 ifile ofile
+
+
+Vector: no change of projection !!! Variables must have the names u and v !!!
+
+	cdo vector  ifile ofile
+	
+	cdo vector,device="pdf" ifile ofile
+	
+	cdo vector,thin_fac=5.0  ifile ofile
+	
+	cdo vector,unit_vec=55.0  ifile ofile
+	
+	cdo vector,thin_fac=5.0,unit_vec=55.0  ifile ofile
+
+    cdo vector,thin_fac=5.0,unit_vec=20.0 -seltimestep,1 -chname,u10,u,v10,v -selvar,u10,v10 $ifile test_vector_plot
+
+
+==============================================================
+
+					CDO Python
+
+==============================================================
+
+Some basics  ($HOME/CDO/Support/python)
+
+	from cdo import *
+	
+	# help(Cdo().sinfo)
+	
+	ifile      = "$HOME/NCL/general/data/new_data/rectilinear_grid_2D.nc"
+	ofile      = "./ofile.nc"
+	ofile_tm   = "./ofile_tm.nc"
+	ofile_tm1  = "./ofile_tm1.nc"
+	ofile_st   = "./ofile_st.nc"
+	ofile_py   = "./ofile_py.nc"
+	
+	print Cdo().sinfo(input = ifile)                                            #-- file info with grid information
+	print '--------------------------------------------'
+	print Cdo().showlevel(input = ifile)                                        #-- returns levels
+	print '--------------------------------------------'
+	Cdo().timmin(input = ifile, output = ofile_tm1)                             #-- compute the time minimum of each variable
+	
+	cdo = Cdo()     #-- make it easier
+	
+	print '--------------------------------------------'
+	cdo.timmin(input = ifile, output = ofile_tm, options = '-f nc')             #-- compute the time minimum of each variable output netcdf
+	
+	#  cdo.remap(gridFile+","+weighFile,  input =  ifile, output =  ofile, options = '-f nc')  #-- remap with weights
+	
+	print '--------------------------------------------'
+	cdo.seltimestep('1/10', input = ifile, output = ofile_st, options = '-r')   #-- select timesteps
+	
+	print '--------------------------------------------'
+	cdo.copy(input = ifile, output = ofile_py, options = '-f nc4c')             #-- convert file to netCDF4
+	
+	#   
+	#  cdo.setname('random', input = "-mul -random,r10x10 -enlarge,r10x10 -setyear,2000 -for,1,4", output = ofile, options = '-f nc')
+	#
+	#--  cdo sub -dayavg ifile2 -timavg ifile1 ofile
+	#  cdo.sub(input = "-dayavg " + ifile2 + " -timavg " +ifile1, output = ofile)
+	#
+	#  cdo.sub(input  =  cdo.dayavg(input  =  ifile2) + " " + cdo.timavg(input  =  ifile1), output  =  ofile)
+	#  
+	#  cdo.sub(input  =  " ".join([cdo.dayavg(input  =  ifile2),cdo.timavg(input  =  ifile1)] , output  =  ofile)
+	#  
+	#  cdo.stdatm("0", options = "-f nc", returnCdf  =  True).variables["P"][:]  # python, access variable 'P' with scipy.io
+	#  
+	#  cdo.readCdf(ifile)
+	#  
+	#  pressure = cdo.stdatm("0", options = "-f nc",  returnArray = 'P')
+	#  
+	#  oro = cdo.setrtomiss(-10000,0, input =  cdo.topo( options =  '-f nc'), returnMaArray =  'topo')
+
+--------------------------------------------------------------
+
+Python operator chaining:
+	select two variables from file and select grid cells:
+
+from cdo import *
+
+ifile = "mydata.nc" 
+ofile = "outfile.nc" 
+
+cdo = Cdo()     #-- make it easier
+
+cdo.selgridcell('640417,691450',input="-select,name=u10,v10" + ifile, output=ofile)
+
+--------------------------------------------------------------
+
+Multi-processing:
+
+	from cdo import *
+	import multiprocessing
+	
+	def showlevel(arg):
+	    return cdo.showlevel(input=arg)
+	
+	cdo       = Cdo()
+	cdo.debug = True
+	ifile     = '/home/ram/local/data/cdo/GR30L20_fx.nc'
+	pool      = multiprocessing.Pool(1)
+	results   = []
+	
+	for i in range(0,5):
+	    results.append(pool.apply_async(showlevel, [ifile]))
+	
+	pool.close()
+	pool.join()
+	
+	for res in results:
+	    print(res.get())
+
+--------------------------------------------------------------
+
+Plotting:
+
+	from cdo import *
+	import matplotlib.pyplot as plt
+	ifile = 'EH5_AMIP_1_TSURF_1991-1995.nc'
+	cdo   = Cdo()
+	
+	# Comput the field mean value timeseries and return it as a numpy array
+	vals  = cdo.fldmean(input=ifile,returnCdf=True).variables['tsurf'][:] 
+	
+	# make it 1D
+	vals = vals.flatten()
+	
+	# Plot the cumulatice sum of the variataion
+	plt.plot((vals-vals.mean()).cumsum())
+	plt.show()
+
+
+--------------------------------------------------------------
+
+Using cdo.expr - the computing command has to be set in double quotes AND single quotes:
+
+	cdo.expr("'ws=sqrt(u10*u10+v10*v10)'",input=ifile, output=ofile)
+
+--------------------------------------------------------------
